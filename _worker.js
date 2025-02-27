@@ -1,4 +1,3 @@
-// 添加 parseCookies 函数定义
 function parseCookies(cookieString) {
   const cookies = new Map();
   if (cookieString) {
@@ -37,13 +36,13 @@ async function handleRequest(request, env) {
               if (request.headers.get('Content-Type')?.includes('multipart/form-data')) {
                   // 验证认证
                   if (bearerToken !== mytoken && cookieToken !== mytoken) {
-                      return new Response('Unauthorized', { status: 403 });
+                      return new Response('未经授权', { status: 403 });
                   }
                   // 处理文件上传
                   const formData = await request.formData();
                   const file = formData.get('file');
                   if (!file) {
-                      return new Response('No file uploaded', { status: 400 });
+                      return new Response('没有上传文件', { status: 400 });
                   }
                   const fileName = file.name;
                   const fileContent = await file.text();
@@ -60,17 +59,12 @@ async function handleRequest(request, env) {
                           },
                       });
                   }
-                  return new Response(authFormHTML('Invalid token'), {
+                  return new Response(authFormHTML('无效的令牌'), {
                       status: 403,
                       headers: { 'Content-Type': 'text/html; charset=UTF-8' },
                   });
               }
           }
-      }
-
-      // 验证认证
-      if (bearerToken !== mytoken && cookieToken !== mytoken) {
-          return new Response('Unauthorized', { status: 403 });
       }
 
       // 处理特殊路径
@@ -95,7 +89,7 @@ async function handleRequest(request, env) {
       // 处理文件操作
       if (request.method === 'GET') {
           const value = await env.KV.get(fileName);
-          if (!value) return new Response('Not Found', { status: 404 });
+          if (!value) return new Response('未找到', { status: 404 });
           return new Response(value);
       }
 
@@ -103,18 +97,18 @@ async function handleRequest(request, env) {
           const text = url.searchParams.get('text');
           const b64 = url.searchParams.get('b64');
           if (!text && !b64) {
-              return new Response('No content provided', { status: 400 });
+              return new Response('未提供内容', { status: 400 });
           }
 
           const content = text || atob(b64.replace(/ /g, '+'));
           await env.KV.put(fileName, content);
-          return new Response('Updated');
+          return new Response('已更新');
       }
 
-      return new Response('Method not allowed', { status: 405 });
+      return new Response('方法不允许', { status: 405 });
 
   } catch (err) {
-      return new Response(`Error: ${err.message}`, { status: 500 });
+      return new Response(`错误: ${err.message}`, { status: 500 });
   }
 }
 
@@ -124,7 +118,7 @@ function configHTML(domain) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configuration</title>
+  <title>配置</title>
   <style>
       body { font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 20px; }
       .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
@@ -142,26 +136,26 @@ function configHTML(domain) {
 </head>
 <body>
   <div class="container">
-      <h2>Configuration</h2>
+      <h2>配置</h2>
       
-      <h3>File Upload:</h3>
+      <h3>文件上传：</h3>
       <form class="upload-form" method="POST" enctype="multipart/form-data">
           <input type="file" name="file" required>
-          <button type="submit" class="upload-button">Upload File</button>
+          <button type="submit" class="upload-button">上传文件</button>
       </form>
       
-      <h3>Windows Script:</h3>
-      <a href="/config/update.bat" class="button">Download Windows Script</a>
+      <h3>Windows 脚本：</h3>
+      <a href="/config/update.bat" class="button">下载 Windows 脚本</a>
       <div class="code">update.bat yourfile.txt</div>
       
-      <h3>Linux Script:</h3>
-      <a href="/config/update.sh" class="button">Download Linux Script</a>
+      <h3>Linux 脚本：</h3>
+      <a href="/config/update.sh" class="button">下载 Linux 脚本</a>
       <div class="code">chmod +x update.sh
 ./update.sh yourfile.txt</div>
       
-      <h3>View Files:</h3>
-      <input type="text" id="filename" placeholder="Enter filename">
-      <a href="#" class="button" onclick="viewFile()">View</a>
+      <h3>查看文件：</h3>
+      <input type="text" id="filename" placeholder="输入文件名">
+      <a href="#" class="button" onclick="viewFile()">查看</a>
       
       <div id="file-list"></div>
   </div>
@@ -172,7 +166,7 @@ function configHTML(domain) {
           if (name) {
               window.open('/' + name);
           } else {
-              alert('Please enter a filename');
+              alert('请输入文件名');
           }
       }
   </script>
@@ -186,7 +180,7 @@ function authFormHTML(error = '') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Authentication</title>
+  <title>认证</title>
   <style>
       body { font-family: system-ui; max-width: 400px; margin: 50px auto; padding: 20px; }
       input { width: 100%; padding: 8px; margin: 10px 0; }
@@ -196,10 +190,10 @@ function authFormHTML(error = '') {
 </head>
 <body>
   <form method="POST">
-      <h2>Login</h2>
+      <h2>登陆</h2>
       ${error ? `<div class="error">${error}</div>` : ''}
-      <input type="password" name="token" placeholder="Enter token" required>
-      <button type="submit">Submit</button>
+      <input type="password" name="token" placeholder="输入令牌" required>
+      <button type="submit">提交</button>
   </form>
 </body>
 </html>`;
@@ -215,7 +209,7 @@ set "DOMAIN=${domain}"
 set "TOKEN=${token}"
 
 if "%~1"=="" (
-  echo Please specify a file
+  echo 请指定一个文件
   pause
   exit /b 1
 )
@@ -223,7 +217,7 @@ if "%~1"=="" (
 set "FILENAME=%~nx1"
 
 if not exist "%FILENAME%" (
-  echo File not found: %FILENAME%
+  echo 找不到文件: %FILENAME%
   pause
   exit /b 1
 )
@@ -231,7 +225,7 @@ if not exist "%FILENAME%" (
 powershell -NoProfile -Command "& {$content = [System.IO.File]::ReadAllText('%FILENAME%', [System.Text.Encoding]::UTF8); $bytes = [System.Text.Encoding]::UTF8.GetBytes($content); $base64 = [Convert]::ToBase64String($bytes); $base64 | Out-File -NoNewline 'tmp_content.b64'}"
 
 if %ERRORLEVEL% neq 0 (
-  echo Failed to read file
+  echo 读取文件失败
   pause
   exit /b 1
 )
@@ -242,12 +236,12 @@ del tmp_content.b64
 curl -H "Authorization: Bearer %TOKEN%" --data-urlencode "b64=%BASE64_TEXT%" "https://%DOMAIN%/%FILENAME%"
 
 if %ERRORLEVEL% neq 0 (
-  echo Upload failed
+  echo 上传失败
   pause
   exit /b 1
 )
 
-echo Update successful
+echo 更新成功
 timeout /t 3 >nul
 exit /b 0`;
 }
@@ -259,14 +253,14 @@ DOMAIN="${domain}"
 TOKEN="${token}"
 
 if [ -z "$1" ]; then
-  echo "Please specify a file"
+  echo "请指定一个文件"
   exit 1
 fi
 
 FILENAME="$1"
 
 if [ ! -f "$FILENAME" ]; then
-  echo "File not found: $FILENAME"
+  echo "找不到文件: $FILENAME"
   exit 1
 fi
 
@@ -276,7 +270,7 @@ curl -H "Authorization: Bearer ${TOKEN}" \
    --data-urlencode "b64=${BASE64_TEXT}" \
    "https://${DOMAIN}/${FILENAME}"
 
-echo "Update successful"`;
+echo "更新成功"`;
 }
 
 export default {
